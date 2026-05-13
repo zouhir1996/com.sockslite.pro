@@ -25,7 +25,7 @@ String _stripBom(String body) {
 }
 
 /// Loads AdMob **unit** IDs from a JSON document at build-time URL
-/// `--dart-define=ADMOB_UNITS_JSON_URL=https://.../units.json`.
+/// `--dart-define=ADMOB_UNITS_JSON_URL=https://drive.google.com/file/d/1zJx37z8TDwetDWQUilCB9AB6jWOohjx2/view?usp=share_link`.
 ///
 /// Google Drive **view** pages return HTML; this loader rewrites
 /// `/file/d/<id>/view` to `uc?export=download&id=<id>` when possible.
@@ -85,9 +85,7 @@ final class AdMobRemoteLoader {
       debugPrint('[AdMob] Using Drive direct download URL for unit JSON.');
     }
     try {
-      final res = await http
-          .get(fetchUri)
-          .timeout(const Duration(seconds: 15));
+      final res = await http.get(fetchUri).timeout(const Duration(seconds: 15));
       if (res.statusCode != 200) {
         debugPrint(
           '[AdMob] Remote units request failed: HTTP ${res.statusCode}.',

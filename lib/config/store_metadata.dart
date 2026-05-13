@@ -7,19 +7,25 @@ import 'app_product_info.dart';
 /// Before release, set at minimum:
 /// - [appleAppId] — numeric App ID from App Store Connect (for rate/open links).
 /// - [privacyPolicyUrl] — public HTTPS URL (must match App Store Connect).
+/// - [supportUrl] — public support page (HTTPS; App Store Connect Support URL).
 /// - [supportEmail] — working mailbox shown to users and in review notes.
 ///
 /// [termsOfUseUrl], [telegramUrl], and [instagramUrl] are optional; empty hides
 /// or downgrades related actions to a clear message.
 abstract final class StoreMetadata {
-  static const String appleAppId = '';
+  static const String appleAppId = '6766300051';
 
   /// Public privacy policy page (HTTPS).
   static const String privacyPolicyUrl =
-      'https://sites.google.com/view/sockslite-pro/home';
+      'https://sites.google.com/view/sockslite-pro1/home';
 
   /// Terms of use / EULA (HTTPS).
-  static const String termsOfUseUrl = '';
+  static const String termsOfUseUrl =
+      'https://sites.google.com/view/sockslite-pro1/home';
+
+  /// Public support page (HTTPS), e.g. Google Sites — use same URL in App Store Connect.
+  static const String supportUrl =
+      'https://sites.google.com/view/sockslite-pro2/home';
 
   /// Shown in mailto and support flows (replace with your live Gmail if different).
   static const String supportEmail = 'sockslitepro@gmail.com';
@@ -37,6 +43,7 @@ abstract final class StoreMetadata {
 
   static Uri? privacyPolicyUri() => _parseHttpUrl(privacyPolicyUrl);
   static Uri? termsOfUseUri() => _parseHttpUrl(termsOfUseUrl);
+  static Uri? supportUri() => _parseHttpUrl(supportUrl);
   static Uri? telegramUri() => _parseHttpUrl(telegramUrl);
   static Uri? instagramUri() => _parseHttpUrl(instagramUrl);
 

@@ -53,13 +53,17 @@ Future<void> _runToolActionImpl(String id) async {
       await _openExternal(StoreMetadata.storeFrontUriForCurrentPlatform());
       break;
     case 'contato':
+      final site = StoreMetadata.supportUri();
+      if (site != null) {
+        await _openExternal(site);
+        break;
+      }
       final mail = StoreMetadata.mailtoSupportUri();
       if (await canLaunchUrl(mail)) {
         await launchUrl(mail);
       } else {
         AppMessenger.show(
-          'Add a valid supportEmail in StoreMetadata and open this from a '
-          'device with email configured.',
+          'Add supportUrl or a valid supportEmail in StoreMetadata.',
         );
       }
       break;
