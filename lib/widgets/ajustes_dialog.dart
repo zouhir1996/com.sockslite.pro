@@ -4,11 +4,15 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../ads/interstitial_controller.dart';
 import '../ads/rewarded_controller.dart';
 import '../app_messenger.dart';
 import '../config/app_product_info.dart';
+import '../screens/connection_profiles_screen.dart';
+import '../screens/sockslite_guide_screen.dart';
 import '../services/settings_persistence.dart';
 import '../theme/app_colors.dart';
+import '../util/push_after_dialog.dart';
 
 bool _isValidIpv4(String s) {
   final parts = s.split('.');
@@ -46,7 +50,8 @@ const Map<String, String> _settingHelp = {
   'TUN HEV-SOCKS5':
       'UI preference for HEV/SOCKS-style tunnel options in your profile.',
   'TCP DELAY': 'TCP tuning preference stored locally for your session preset.',
-  'IPV6 ROUTES': 'Whether to prefer IPv6 routes in the client preset (local only).',
+  'IPV6 ROUTES':
+      'Whether to prefer IPv6 routes in the client preset (local only).',
   'WAKELOCK': 'Keep the screen awake during an active in-app session.',
   'HIDE LOG': 'Show fewer lines in the Log screen.',
   'CLEAR LOG': 'Prefer an empty log view until new entries are generated.',
@@ -185,7 +190,9 @@ class _AjustesBodyState extends State<_AjustesBody> {
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
-                      borderSide: const BorderSide(color: AppColors.toggleTileBorder),
+                      borderSide: const BorderSide(
+                        color: AppColors.toggleTileBorder,
+                      ),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
@@ -200,7 +207,11 @@ class _AjustesBodyState extends State<_AjustesBody> {
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.of(ctx).pop(null),
+              onPressed: () {
+                InterstitialController.instance.showInterstitialOrRun(() {
+                  Navigator.of(ctx).pop(null);
+                });
+              },
               child: Text(
                 'Cancel',
                 style: GoogleFonts.nunito(
@@ -232,9 +243,7 @@ class _AjustesBodyState extends State<_AjustesBody> {
       await SettingsPersistence.saveCustomDns(result);
       if (!mounted) return;
       setState(() {
-        _dnsSubtitle = _dnsSubtitleFromStored(
-          result.isEmpty ? '' : result,
-        );
+        _dnsSubtitle = _dnsSubtitleFromStored(result.isEmpty ? '' : result);
       });
       AppMessenger.show('Custom DNS saved on this device.');
     } finally {
@@ -297,7 +306,11 @@ class _AjustesBodyState extends State<_AjustesBody> {
                       ),
                     ),
                     IconButton(
-                      onPressed: () => Navigator.of(context).pop(),
+                      onPressed: () {
+                        InterstitialController.instance.showInterstitialOrRun(() {
+                          Navigator.of(context).pop();
+                        });
+                      },
                       icon: const Icon(
                         Icons.close,
                         color: Colors.redAccent,
@@ -332,6 +345,34 @@ class _AjustesBodyState extends State<_AjustesBody> {
                           ),
                         ),
                       ),
+                      _HubLinkCard(
+                        icon: Icons.menu_book_outlined,
+                        title: 'Sockslite guide',
+                        subtitle: 'VPN & proxy reference (no tunnel)',
+                        onTap: () {
+                          RewardedAdController.instance.showRewardedThenRun(() {
+                            pushAfterClosingDialog(
+                              context,
+                              const SocksliteGuideScreen(),
+                            );
+                          });
+                        },
+                      ),
+                      const SizedBox(height: 8),
+                      _HubLinkCard(
+                        icon: Icons.folder_special_outlined,
+                        title: 'Saved connection profiles',
+                        subtitle: 'For your VPN or proxy client (local only)',
+                        onTap: () {
+                          RewardedAdController.instance.showRewardedThenRun(() {
+                            pushAfterClosingDialog(
+                              context,
+                              const ConnectionProfilesScreen(),
+                            );
+                          });
+                        },
+                      ),
+                      const SizedBox(height: 12),
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -395,10 +436,10 @@ class _AjustesBodyState extends State<_AjustesBody> {
                           child: InkWell(
                             borderRadius: BorderRadius.circular(12),
                             onTap: () {
-                              RewardedAdController.instance.runAfterRewarded(
-                                context,
-                                () => unawaited(_redefinir()),
-                              );
+                              InterstitialController.instance
+                                  .showInterstitialOrRun(() {
+                                unawaited(_redefinir());
+                              });
                             },
                             child: Container(
                               padding: const EdgeInsets.symmetric(
@@ -427,6 +468,71 @@ class _AjustesBodyState extends State<_AjustesBody> {
                   ),
                 ),
               ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _HubLinkCard extends StatelessWidget {
+  const _HubLinkCard({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: AppColors.toggleTileBg,
+      borderRadius: BorderRadius.circular(12),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: AppColors.toggleTileBorder),
+          ),
+          child: Row(
+            children: [
+              Icon(icon, color: AppColors.accentBlue, size: 28),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: GoogleFonts.nunito(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 14,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      style: GoogleFonts.nunito(
+                        color: Colors.white60,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 11.5,
+                        height: 1.25,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(Icons.chevron_right, color: Colors.white38),
             ],
           ),
         ),

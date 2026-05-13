@@ -31,7 +31,7 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
-        <!-- Replace with your AdMob App ID when enabling real ads (must match lib/ads/admob_config.dart). -->
+        <!-- Google test App ID; replace with your production App ID for release. -->
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"
             android:value="ca-app-pub-3940256099942544~3347511713" />

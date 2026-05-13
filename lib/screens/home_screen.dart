@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math' as math;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -10,9 +11,10 @@ import '../ads/banner_ad_slot.dart';
 import '../ads/interstitial_controller.dart';
 import '../ads/rewarded_controller.dart';
 import '../app_messenger.dart';
-import '../config/app_product_info.dart';
 import '../services/settings_persistence.dart';
 import '../theme/app_colors.dart';
+import 'connection_profiles_screen.dart';
+import 'sockslite_guide_screen.dart';
 import '../widgets/ajustes_dialog.dart';
 import '../widgets/ferramentas_dialog.dart';
 import '../widgets/network_stats_bar.dart';
@@ -43,15 +45,14 @@ String _formatRemainingConnection(int seconds) {
 class _HomeScreenState extends State<HomeScreen> {
   int _navIndex = -1;
   bool _vpnOn = false;
+
   /// Seconds left on the plan; decrements once per second while UI "connected."
-  int _remainingSeconds =
-      SettingsPersistence.defaultConnectionRemainingSeconds;
+  int _remainingSeconds = SettingsPersistence.defaultConnectionRemainingSeconds;
   Timer? _connectionTicker;
   Timer? _statsTicker;
   int _uploadBytes = 0;
   int _downloadBytes = 0;
   String _serverProfile = SettingsPersistence.serverProfileRandom;
-
 
   @override
   void initState() {
@@ -78,9 +79,8 @@ class _HomeScreenState extends State<HomeScreen> {
     if (!mounted) return;
     setState(() {
       _vpnOn = p.getBool('vpn_ui_connected') ?? false;
-      _remainingSeconds = p.getInt(
-            SettingsPersistence.connectionRemainingSecondsKey,
-          ) ??
+      _remainingSeconds =
+          p.getInt(SettingsPersistence.connectionRemainingSecondsKey) ??
           SettingsPersistence.defaultConnectionRemainingSeconds;
     });
     _syncConnectionTicker();
@@ -88,6 +88,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   /// UI-only session counters while “connected”; not real interface traffic.
+  /// [SettingsPersistence.serverProfileRandom] uses wider jumps; [serverProfileAuto] is steadier.
   void _syncStatsTicker() {
     _statsTicker?.cancel();
     _statsTicker = null;
@@ -101,11 +102,18 @@ class _HomeScreenState extends State<HomeScreen> {
       return;
     }
     final rnd = math.Random();
+    final randomStyle =
+        _serverProfile == SettingsPersistence.serverProfileRandom;
     _statsTicker = Timer.periodic(const Duration(milliseconds: 750), (_) {
       if (!mounted || !_vpnOn) return;
       setState(() {
-        _uploadBytes += rnd.nextInt(380) + 40;
-        _downloadBytes += rnd.nextInt(1400) + 120;
+        if (randomStyle) {
+          _uploadBytes += rnd.nextInt(380) + 40;
+          _downloadBytes += rnd.nextInt(1400) + 120;
+        } else {
+          _uploadBytes += rnd.nextInt(100) + 70;
+          _downloadBytes += rnd.nextInt(220) + 280;
+        }
       });
     });
   }
@@ -170,48 +178,76 @@ class _HomeScreenState extends State<HomeScreen> {
     _clearNavHighlight();
   }
 
+  void _openSocksliteGuide() {
+    RewardedAdController.instance.showRewardedThenRun(() {
+      if (!mounted) return;
+      Navigator.of(context).push<void>(
+        MaterialPageRoute<void>(builder: (_) => const SocksliteGuideScreen()),
+      );
+    });
+  }
+
+  void _openSavedProfiles() {
+    RewardedAdController.instance.showRewardedThenRun(() {
+      if (!mounted) return;
+      Navigator.of(context).push<void>(
+        MaterialPageRoute<void>(
+          builder: (_) => const ConnectionProfilesScreen(),
+        ),
+      );
+    });
+  }
+
   void _onNavTap(int index) {
-    if (index == 2) {
-      RewardedAdController.instance.runAfterRewarded(context, () {
+    if (index == 0) {
+      InterstitialController.instance.showInterstitialOrRun(() {
         if (!mounted) return;
-        final next = !_vpnOn;
-        setState(() => _vpnOn = next);
-        unawaited(_persistVpnState(next));
-        _syncConnectionTicker();
-        _syncStatsTicker();
-        AppMessenger.show(
-          next
-              ? 'On (UI only). Does not create an iOS VPN profile or route traffic.'
-              : 'Off (UI).',
-        );
+        setState(() => _navIndex = 0);
+        showAjustesDialog(context).whenComplete(_clearNavHighlight);
       });
+      return;
+    }
+    if (index == 2) {
+      RewardedAdController.instance.showRewardedThenRun(() {
+        if (!mounted) return;
+        _onNavTapImpl(2);
+      });
+      return;
+    }
+    RewardedAdController.instance.showRewardedThenRun(() {
+      if (!mounted) return;
+      _onNavTapImpl(index);
+    });
+  }
+
+  void _onNavTapImpl(int index) {
+    if (index == 2) {
+      final next = !_vpnOn;
+      setState(() => _vpnOn = next);
+      unawaited(_persistVpnState(next));
+      _syncConnectionTicker();
+      _syncStatsTicker();
+      AppMessenger.show(
+        next
+            ? 'On (UI only). Does not create an iOS VPN profile or route traffic.'
+            : 'Off (UI).',
+      );
       return;
     }
 
     setState(() => _navIndex = index);
     switch (index) {
       case 0:
-        InterstitialController.instance.showInterstitialOrRun(() {
-          if (!mounted) return;
-          showAjustesDialog(context).whenComplete(_clearNavHighlight);
-        });
+        showAjustesDialog(context).whenComplete(_clearNavHighlight);
         break;
       case 1:
-        InterstitialController.instance.showInterstitialOrRun(() {
-          if (!mounted) return;
-          showRegistroDialog(context).whenComplete(_clearNavHighlight);
-        });
+        showRegistroDialog(context).whenComplete(_clearNavHighlight);
         break;
       case 3:
-        InterstitialController.instance.showInterstitialOrRun(() {
-          unawaited(_runServerRefreshNav());
-        });
+        unawaited(_runServerRefreshNav());
         break;
       case 4:
-        InterstitialController.instance.showInterstitialOrRun(() {
-          if (!mounted) return;
-          showFerramentasDialog(context).whenComplete(_clearNavHighlight);
-        });
+        showFerramentasDialog(context).whenComplete(_clearNavHighlight);
         break;
     }
   }
@@ -231,7 +267,8 @@ class _HomeScreenState extends State<HomeScreen> {
             connectionTimeText:
                 '${_formatRemainingConnection(_remainingSeconds)} REMAINING CONNECTION TIME',
             onAdd: () {
-              RewardedAdController.instance.runAfterRewarded(context, () {
+              if (!mounted) return;
+              InterstitialController.instance.showInterstitialOrRun(() {
                 if (!mounted) return;
                 unawaited(_addRemainingTime());
               });
@@ -243,6 +280,11 @@ class _HomeScreenState extends State<HomeScreen> {
               child: Column(
                 children: [
                   const SizedBox(height: 8),
+                  _SocksliteHubRow(
+                    onGuide: _openSocksliteGuide,
+                    onProfiles: _openSavedProfiles,
+                  ),
+                  const SizedBox(height: 14),
                   _PowerRing(active: _vpnOn, onTap: () => _onNavTap(2)),
                   AnimatedSize(
                     duration: const Duration(milliseconds: 260),
@@ -317,7 +359,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             Expanded(
                               child: Text(
                                 _vpnOn
-                                    ? 'Session active (UI only — no system VPN)'
+                                    ? 'Session active (Thank you for using sockslite_pro)'
                                     : 'Disconnected',
                                 style: GoogleFonts.nunito(
                                   color: Colors.white,
@@ -330,9 +372,10 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          AppProductInfo.connectionRealityShort,
+                          'Active profile: Default profile • START = local preview only. '
+                          'Session and "connect" are in-app only.',
                           style: GoogleFonts.nunito(
-                            color: Colors.white54,
+                            color: Colors.white60,
                             fontWeight: FontWeight.w600,
                             fontSize: 11,
                             height: 1.35,
@@ -344,11 +387,12 @@ class _HomeScreenState extends State<HomeScreen> {
                   const SizedBox(height: 22),
                   SelectionCard(
                     title: 'RANDOM SERVER',
-                    subtitle: 'AUTO PICK',
-                    selected: _serverProfile ==
+                    subtitle: 'BUSIER DEMO STATS (UI)',
+                    selected:
+                        _serverProfile ==
                         SettingsPersistence.serverProfileRandom,
                     onTap: () {
-                      RewardedAdController.instance.runAfterRewarded(context, () {
+                      RewardedAdController.instance.showRewardedThenRun(() {
                         if (!mounted) return;
                         unawaited(
                           SettingsPersistence.saveServerProfile(
@@ -359,8 +403,10 @@ class _HomeScreenState extends State<HomeScreen> {
                           () => _serverProfile =
                               SettingsPersistence.serverProfileRandom,
                         );
+                        if (_vpnOn) _syncStatsTicker();
                         AppMessenger.show(
-                          'Random server will be used on the next connection.',
+                          'Saved: random preset — demo stats jump more while '
+                          'connected (UI only, not a real server).',
                         );
                       });
                     },
@@ -371,11 +417,11 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                   SelectionCard(
                     title: 'AUTOMATIC',
-                    subtitle: 'AUTO PICK',
+                    subtitle: 'CALMER DEMO STATS (UI)',
                     selected:
                         _serverProfile == SettingsPersistence.serverProfileAuto,
                     onTap: () {
-                      RewardedAdController.instance.runAfterRewarded(context, () {
+                      RewardedAdController.instance.showRewardedThenRun(() {
                         if (!mounted) return;
                         unawaited(
                           SettingsPersistence.saveServerProfile(
@@ -386,8 +432,10 @@ class _HomeScreenState extends State<HomeScreen> {
                           () => _serverProfile =
                               SettingsPersistence.serverProfileAuto,
                         );
+                        if (_vpnOn) _syncStatsTicker();
                         AppMessenger.show(
-                          'Automatic mode: protocol chosen by the client.',
+                          'Saved: automatic preset — demo stats stay steadier while '
+                          'connected (UI only, not protocol routing).',
                         );
                       });
                     },
@@ -418,8 +466,7 @@ class _HomeScreenState extends State<HomeScreen> {
       bottomNavigationBar: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          if (AdMobConfig.shouldInitializeSdk && AdMobConfig.bannerActive)
-            const BannerAdSlot(),
+          if (!kIsWeb && AdMobConfig.bannerActive) const BannerAdSlot(),
           _BottomDock(
             bottomInset: bottomInset,
             selectedIndex: _navIndex,
@@ -432,11 +479,88 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-class _HeaderBar extends StatelessWidget {
-  const _HeaderBar({
-    required this.connectionTimeText,
-    required this.onAdd,
+class _SocksliteHubRow extends StatelessWidget {
+  const _SocksliteHubRow({required this.onGuide, required this.onProfiles});
+
+  final VoidCallback onGuide;
+  final VoidCallback onProfiles;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: _HubChip(
+            icon: Icons.menu_book_outlined,
+            label: 'Sockslite guide',
+            onTap: onGuide,
+          ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: _HubChip(
+            icon: Icons.folder_special_outlined,
+            label: 'Saved profiles',
+            onTap: onProfiles,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _HubChip extends StatelessWidget {
+  const _HubChip({
+    required this.icon,
+    required this.label,
+    required this.onTap,
   });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: AppColors.toggleTileBg,
+      borderRadius: BorderRadius.circular(12),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: AppColors.toggleTileBorder),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, color: AppColors.accentBlue, size: 22),
+              const SizedBox(height: 6),
+              Text(
+                label,
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: GoogleFonts.nunito(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w800,
+                  fontSize: 11,
+                  height: 1.15,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _HeaderBar extends StatelessWidget {
+  const _HeaderBar({required this.connectionTimeText, required this.onAdd});
 
   final String connectionTimeText;
   final VoidCallback onAdd;

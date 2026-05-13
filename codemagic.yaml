@@ -18,7 +18,8 @@ workflows:
       - name: Set up code signing
         script: xcode-project use-profiles
       - name: Build IPA
-        script: flutter build ipa --release --export-options-plist=/Users/builder/export_options.plist
+        # Set ADMOB_UNITS_JSON_URL in Codemagic Environment variables (HTTPS JSON).
+        script: flutter build ipa --release --dart-define=ADMOB_UNITS_JSON_URL="${ADMOB_UNITS_JSON_URL}" --export-options-plist=/Users/builder/export_options.plist
     artifacts:
       - build/ios/ipa/*.ipa
     publishing:

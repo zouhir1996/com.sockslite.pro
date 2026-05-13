@@ -8,6 +8,7 @@ abstract final class AppProductInfo {
 
   /// Shown on the home screen and in settings.
   static const String connectionRealityShort =
+      'Active profile: Default profile • START = local preview only. '
       'Session and "connect" are in-app only.';
 
   /// Short summary aligned with the first-run legal screen (for reuse elsewhere).

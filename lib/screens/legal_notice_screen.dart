@@ -5,7 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../ads/rewarded_controller.dart';
+import '../ads/interstitial_controller.dart';
 import '../app_messenger.dart';
 import '../config/app_product_info.dart';
 import '../config/store_metadata.dart';
@@ -20,7 +20,7 @@ class LegalNoticeScreen extends StatelessWidget {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('legal_accepted', true);
     if (!context.mounted) return;
-    RewardedAdController.instance.runAfterRewarded(context, () {
+    InterstitialController.instance.showInterstitialOrRun(() {
       if (!context.mounted) return;
       Navigator.of(context).pushReplacement(
         MaterialPageRoute<void>(builder: (_) => const HomeScreen()),
@@ -102,15 +102,9 @@ class LegalNoticeScreen extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        Text(
-                          'REQUIRED LEGAL CONDUCT',
-                          style: titleStyle,
-                        ),
+                        Text('REQUIRED LEGAL CONDUCT', style: titleStyle),
                         const SizedBox(height: 16),
-                        Text(
-                          'LEGAL USE DISCLOSURE',
-                          style: subHeaderStyle,
-                        ),
+                        Text('LEGAL USE DISCLOSURE', style: subHeaderStyle),
                         const SizedBox(height: 14),
                         Text(
                           'The app is still under development and will be '
@@ -192,7 +186,9 @@ class LegalNoticeScreen extends StatelessWidget {
                                   ),
                                   style: OutlinedButton.styleFrom(
                                     foregroundColor: Colors.white,
-                                    side: const BorderSide(color: Colors.white38),
+                                    side: const BorderSide(
+                                      color: Colors.white38,
+                                    ),
                                   ),
                                   child: Text(
                                     'Terms of use',
@@ -209,7 +205,9 @@ class LegalNoticeScreen extends StatelessWidget {
                                   ),
                                   style: OutlinedButton.styleFrom(
                                     foregroundColor: Colors.white,
-                                    side: const BorderSide(color: Colors.white38),
+                                    side: const BorderSide(
+                                      color: Colors.white38,
+                                    ),
                                   ),
                                   child: Text(
                                     'Privacy policy',
@@ -250,7 +248,7 @@ class LegalNoticeScreen extends StatelessWidget {
                     child: _FootButton(
                       label: 'I ACCEPT THE TERMS',
                       color: const Color(0xFF1E5622),
-                      onPressed: () => _accept(context),
+                      onPressed: () => unawaited(_accept(context)),
                     ),
                   ),
                 ],

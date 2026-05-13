@@ -1,11 +1,14 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import 'ads/admob_bootstrap.dart';
+import 'ads/admob_config.dart';
+import 'ads/admob_remote_loader.dart';
+import 'ads/admob_sdk.dart';
 import 'ads/app_open_ad_manager.dart';
 import 'app_messenger.dart';
-import 'ads/admob_config.dart';
 import 'config/app_product_info.dart';
 import 'screens/splash_screen.dart';
 import 'theme/app_colors.dart';
@@ -13,8 +16,11 @@ import 'theme/app_colors.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
-  await AdMobConfig.ensureLoaded();
-  await AdMobBootstrap.warmUp();
+  if (!kIsWeb) {
+    await AdMobRemoteLoader.instance.load();
+    await AdMobSdk.ensureInitialized();
+    await AdMobBootstrap.warmUp();
+  }
   runApp(const SocksliteApp());
 }
 
@@ -29,18 +35,23 @@ class _SocksliteAppState extends State<SocksliteApp> with WidgetsBindingObserver
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addObserver(this);
+    if (!kIsWeb && AdMobConfig.appOpenActive) {
+      WidgetsBinding.instance.addObserver(this);
+      AppOpenAdManager.instance.scheduleColdStartShow();
+    }
   }
 
   @override
   void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
+    if (!kIsWeb && AdMobConfig.appOpenActive) {
+      WidgetsBinding.instance.removeObserver(this);
+    }
     super.dispose();
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (AdMobConfig.appOpenActive) {
+    if (!kIsWeb && AdMobConfig.appOpenActive) {
       AppOpenAdManager.instance.handleLifecycle(state);
     }
   }
@@ -64,4 +75,3 @@ class _SocksliteAppState extends State<SocksliteApp> with WidgetsBindingObserver
     );
   }
 }
-

@@ -8,32 +8,12 @@ import '../ads/interstitial_controller.dart';
 import '../app_messenger.dart';
 import '../config/store_metadata.dart';
 import 'settings_persistence.dart';
+import 'vpn_settings_launcher.dart';
 
 bool get _isAndroid =>
     !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
 
-/// Tool rows that open with an interstitial first (when configured).
-const Set<String> _interstitialBeforeToolActions = {
-  'apn',
-  'rede_movel',
-  'rotear',
-  'speed',
-  'bateria',
-  'store',
-  'contato',
-  'telegram',
-  'avaliar',
-  'instagram',
-  'restaurar',
-};
-
 Future<void> runToolAction(String id) async {
-  if (_interstitialBeforeToolActions.contains(id)) {
-    InterstitialController.instance.showInterstitialOrRun(() {
-      unawaited(_runToolSafe(id));
-    });
-    return;
-  }
   await _runToolSafe(id);
 }
 
@@ -49,45 +29,25 @@ Future<void> _runToolSafe(String id) async {
 Future<void> _runToolActionImpl(String id) async {
   switch (id) {
     case 'apn':
-      if (_isAndroid) {
-        await AppSettings.openAppSettings(type: AppSettingsType.apn);
-      } else {
-        await AppSettings.openAppSettings();
-        AppMessenger.show(
-          'On iOS: Settings → Cellular → Cellular Data Options / Network.',
-        );
-      }
+      InterstitialController.instance.showInterstitialOrRun(() {
+        unawaited(_openApn());
+      });
       break;
     case 'rede_movel':
-      if (_isAndroid) {
-        await AppSettings.openAppSettings(type: AppSettingsType.wireless);
-      } else {
-        await AppSettings.openAppSettings();
-        AppMessenger.show('Wi‑Fi & cellular are in the system Settings app.');
-      }
+      InterstitialController.instance.showInterstitialOrRun(() {
+        unawaited(_openRedeMovel());
+      });
       break;
     case 'rotear':
-      if (_isAndroid) {
-        await AppSettings.openAppSettings(type: AppSettingsType.vpn);
-      } else {
-        await AppSettings.openAppSettings();
-        AppMessenger.show(
-          'System VPN: Settings → General → VPN & Device Management.',
-        );
-      }
+      await openSystemVpnRelatedSettings();
       break;
     case 'speed':
       await _openExternal(Uri.parse('https://fast.com'));
       break;
     case 'bateria':
-      if (_isAndroid) {
-        await AppSettings.openAppSettings(
-          type: AppSettingsType.batteryOptimization,
-        );
-      } else {
-        await AppSettings.openAppSettings();
-        AppMessenger.show('Battery: Settings → Battery.');
-      }
+      InterstitialController.instance.showInterstitialOrRun(() {
+        unawaited(_openBateria());
+      });
       break;
     case 'store':
       await _openExternal(StoreMetadata.storeFrontUriForCurrentPlatform());
@@ -132,6 +92,37 @@ Future<void> _runToolActionImpl(String id) async {
       break;
     default:
       AppMessenger.show('Unavailable.');
+  }
+}
+
+Future<void> _openApn() async {
+  if (_isAndroid) {
+    await AppSettings.openAppSettings(type: AppSettingsType.apn);
+  } else {
+    await AppSettings.openAppSettings();
+    AppMessenger.show(
+      'On iOS: Settings → Cellular → Cellular Data Options / Network.',
+    );
+  }
+}
+
+Future<void> _openRedeMovel() async {
+  if (_isAndroid) {
+    await AppSettings.openAppSettings(type: AppSettingsType.wireless);
+  } else {
+    await AppSettings.openAppSettings();
+    AppMessenger.show('Wi‑Fi & cellular are in the system Settings app.');
+  }
+}
+
+Future<void> _openBateria() async {
+  if (_isAndroid) {
+    await AppSettings.openAppSettings(
+      type: AppSettingsType.batteryOptimization,
+    );
+  } else {
+    await AppSettings.openAppSettings();
+    AppMessenger.show('Battery: Settings → Battery.');
   }
 }
 

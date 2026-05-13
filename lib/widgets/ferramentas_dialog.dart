@@ -6,8 +6,12 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../ads/interstitial_controller.dart';
+import '../ads/rewarded_controller.dart';
+import '../screens/connection_profiles_screen.dart';
+import '../screens/sockslite_guide_screen.dart';
 import '../services/tool_actions.dart';
 import '../theme/app_colors.dart';
+import '../util/push_after_dialog.dart';
 import 'privacy_policy_dialog.dart';
 
 Future<void> showFerramentasDialog(BuildContext context) {
@@ -39,7 +43,8 @@ class _FerramentasBody extends StatelessWidget {
 
   /// Platform-appropriate store label on iOS vs Android.
   static List<_Tool> _tools() {
-    final isAndroid = !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
+    final isAndroid =
+        !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
     final lojaLabel = isAndroid ? 'GOOGLE PLAY' : 'APP STORE';
     final list = <_Tool>[
       const _Tool('apn', 'APN', Icons.sim_card, Color(0xFF90CAF9)),
@@ -50,6 +55,18 @@ class _FerramentasBody extends StatelessWidget {
         Color(0xFF81C784),
       ),
       const _Tool('rotear', 'ROUTE', Icons.cloud_outlined, Color(0xFF64B5F6)),
+      const _Tool(
+        'sockslite_guide',
+        'SOCKSLITE GUIDE',
+        Icons.menu_book_outlined,
+        Color(0xFF4FC3F7),
+      ),
+      const _Tool(
+        'saved_profiles',
+        'SAVED PROFILES',
+        Icons.folder_special_outlined,
+        Color(0xFFAED581),
+      ),
       const _Tool('speed', 'SPEED TEST', Icons.speed, Color(0xFFFFB74D)),
       const _Tool(
         'bateria',
@@ -58,7 +75,12 @@ class _FerramentasBody extends StatelessWidget {
         Color(0xFFFFF176),
       ),
       _Tool('store', lojaLabel, Icons.play_arrow_rounded, Color(0xFF64B5F6)),
-      const _Tool('contato', 'CONTACT', Icons.email_outlined, Color(0xFF42A5F5)),
+      const _Tool(
+        'contato',
+        'CONTACT',
+        Icons.email_outlined,
+        Color(0xFF42A5F5),
+      ),
       const _Tool('telegram', 'TELEGRAM', Icons.send, Color(0xFF29B6F6)),
       const _Tool(
         'avaliar',
@@ -78,7 +100,12 @@ class _FerramentasBody extends StatelessWidget {
         Icons.cleaning_services_outlined,
         Color(0xFFB0BEC5),
       ),
-      const _Tool('privacy', 'PRIVACY', Icons.privacy_tip_outlined, Color(0xFFFFEE58)),
+      const _Tool(
+        'privacy',
+        'PRIVACY',
+        Icons.privacy_tip_outlined,
+        Color(0xFFFFEE58),
+      ),
     ];
     return list;
   }
@@ -120,7 +147,11 @@ class _FerramentasBody extends StatelessWidget {
                       ),
                     ),
                     IconButton(
-                      onPressed: () => Navigator.of(context).pop(),
+                      onPressed: () {
+                        InterstitialController.instance.showInterstitialOrRun(() {
+                          Navigator.of(context).pop();
+                        });
+                      },
                       icon: const Icon(
                         Icons.close,
                         color: Colors.redAccent,
@@ -134,6 +165,7 @@ class _FerramentasBody extends StatelessWidget {
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
                   child: GridView.builder(
+                    physics: const AlwaysScrollableScrollPhysics(),
                     gridDelegate:
                         const SliverGridDelegateWithFixedCrossAxisCount(
                           crossAxisCount: 2,
@@ -171,8 +203,21 @@ class _ToolTile extends StatelessWidget {
         borderRadius: BorderRadius.circular(8),
         onTap: () {
           if (tool.id == 'privacy') {
-            InterstitialController.instance.showInterstitialOrRun(() {
-              if (context.mounted) showPrivacyPolicyDialog(context);
+            if (context.mounted) showPrivacyPolicyDialog(context);
+            return;
+          }
+          if (tool.id == 'sockslite_guide') {
+            RewardedAdController.instance.showRewardedThenRun(() {
+              pushAfterClosingDialog(context, const SocksliteGuideScreen());
+            });
+            return;
+          }
+          if (tool.id == 'saved_profiles') {
+            RewardedAdController.instance.showRewardedThenRun(() {
+              pushAfterClosingDialog(
+                context,
+                const ConnectionProfilesScreen(),
+              );
             });
             return;
           }

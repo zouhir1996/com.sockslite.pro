@@ -6,70 +6,62 @@ import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'admob_config.dart';
 import 'admob_sdk.dart';
 
-/// Full-screen interstitial after legal accept (when configured).
-class InterstitialController {
+/// Full-screen interstitial before sensitive navigation or system UI.
+final class InterstitialController {
   InterstitialController._();
   static final InterstitialController instance = InterstitialController._();
 
   InterstitialAd? _ad;
-  bool _loading = false;
 
   Future<void> preload() async {
+    if (kIsWeb) return;
     await AdMobSdk.ensureInitialized();
-    if (!AdMobConfig.interstitialActive) {
-      return;
-    }
-    if (_ad != null || _loading) return;
-    _loading = true;
+    if (!AdMobConfig.interstitialActive) return;
     await InterstitialAd.load(
       adUnitId: AdMobConfig.interstitialUnitId,
       request: const AdRequest(),
       adLoadCallback: InterstitialAdLoadCallback(
-        onAdLoaded: (ad) {
-          _loading = false;
-          _ad = ad;
-        },
+        onAdLoaded: (ad) => _ad = ad,
         onAdFailedToLoad: (error) {
-          debugPrint(
-            '[AdMob] Interstitial load failed: ${error.message} (code ${error.code})',
-          );
-          _loading = false;
+          debugPrint('[AdMob] Interstitial load failed: ${error.message}');
+          _ad = null;
         },
       ),
     );
   }
 
-  /// Shows loaded interstitial then runs [after]. If none ready, runs [after] immediately.
   void showInterstitialOrRun(void Function() after) {
-    unawaited(_showInterstitialOrRunAsync(after));
+    unawaited(_showAsync(after));
   }
 
-  Future<void> _showInterstitialOrRunAsync(void Function() after) async {
+  Future<void> _showAsync(void Function() after) async {
+    if (kIsWeb) {
+      after();
+      return;
+    }
     await AdMobSdk.ensureInitialized();
     if (!AdMobConfig.interstitialActive) {
       after();
       return;
     }
-    var ad = _ad;
-    if (ad == null) {
-      await preload();
-      ad = _ad;
-    }
+    final ad = _ad;
+    _ad = null;
     if (ad == null) {
       after();
+      unawaited(preload());
       return;
     }
-    _ad = null;
     ad.fullScreenContentCallback = FullScreenContentCallback(
       onAdDismissedFullScreenContent: (a) {
         a.dispose();
-        unawaited(preload());
         after();
+        unawaited(preload());
       },
-      onAdFailedToShowFullScreenContent: (a, _) {
+      onAdFailedToShowFullScreenContent: (a, e) {
+        debugPrint('[AdMob] Interstitial show failed: $e');
         a.dispose();
-        unawaited(preload());
         after();
+        unawaited(preload());
       },
     );
     ad.show();
