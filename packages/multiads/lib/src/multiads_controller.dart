@@ -75,6 +75,16 @@ class MultiAds {
     await openAdsInstance.loadAppOpenAd();
   }
 
+  bool get hasAppOpen => _adsData.settings.openads.isNotEmpty;
+
+  bool get hasBanners => _adsData.settings.banners.isNotEmpty;
+
+  bool get hasInterstitials => _adsData.settings.inters.isNotEmpty;
+
+  bool get hasRewarded => _adsData.settings.rewards.isNotEmpty;
+
+  bool get hasNatives => _adsData.settings.natives.isNotEmpty;
+
   // ─── Instances ───────────────────────────────────────────────────────────
 
   Ads get bannerInstance {

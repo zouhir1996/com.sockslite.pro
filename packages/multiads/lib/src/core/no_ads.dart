@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import 'ad_callbacks.dart';
 import 'ads_base.dart';
 
 class NoAds extends Ads {
@@ -17,11 +19,19 @@ class NoAds extends Ads {
   @override
   Future<void> loadInterstitialAd() async {}
   @override
-  void showInterstitialAd() {}
+  void showInterstitialAd() {
+    final done = AdCallbacks.onInterstitialDismissed;
+    AdCallbacks.onInterstitialDismissed = null;
+    done?.call();
+  }
+
   @override
   Future<void> loadRewardAd() async {}
+
   @override
-  void showRewardAd(Function rewarded) {}
+  void showRewardAd(Function rewarded) {
+    rewarded();
+  }
   @override
   Future<void> loadNativeAd(
     Function? onLoaded,

@@ -20,7 +20,7 @@ class _BannerAdSlotState extends State<BannerAdSlot> {
   @override
   void initState() {
     super.initState();
-    if (kIsWeb || !gAdsReady) return;
+    if (kIsWeb || !gAdsReady || !gAds.hasBanners) return;
     unawaited(
       gAds.bannerInstance.loadBannerAd(() {
         if (mounted) setState(() => _ready = true);
@@ -30,7 +30,7 @@ class _BannerAdSlotState extends State<BannerAdSlot> {
 
   @override
   void dispose() {
-    if (gAdsReady) {
+    if (gAdsReady && gAds.hasBanners) {
       unawaited(gAds.bannerInstance.disposeBanner(_bannerKey));
     }
     super.dispose();
@@ -38,7 +38,7 @@ class _BannerAdSlotState extends State<BannerAdSlot> {
 
   @override
   Widget build(BuildContext context) {
-    if (kIsWeb || !gAdsReady || !_ready) {
+    if (kIsWeb || !gAdsReady || !gAds.hasBanners || !_ready) {
       return const SizedBox.shrink();
     }
     return gAds.bannerInstance.getBannerAdWidget(_bannerKey);

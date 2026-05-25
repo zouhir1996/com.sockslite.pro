@@ -369,9 +369,8 @@ class FacebookAD extends Ads {
   void showRewardAd(Function rewarded) {
     if (!_rewardLoaded) {
       Log.log("Facebook >> Rewarded not ready");
-
       loadRewardAd();
-
+      rewarded();
       return;
     }
 
@@ -394,8 +393,9 @@ class FacebookAD extends Ads {
         })
         .catchError((e) {
           Log.log("Facebook >> Rewarded show error: $e");
-
           _rewardLoaded = false;
+          _rewardCallback?.call();
+          _rewardCallback = null;
         });
   }
 

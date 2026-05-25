@@ -2,7 +2,7 @@ name: fc_app3_sockslite_pro
 description: "Sockslite Pro — connection dashboard and local session UI (configure disclosure URLs for App Store)."
 publish_to: "none"
 
-version: 1.1.0+1
+version: 1.1.1+1
 
 environment:
   sdk: ^3.11.0

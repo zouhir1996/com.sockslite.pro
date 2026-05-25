@@ -39,7 +39,7 @@ void showAppOpenOnResumeIfEligible() {
 }
 
 void _tryShowAppOpen() {
-  if (!gAdsReady) return;
+  if (!_canShowAppOpen()) return;
   final now = DateTime.now();
   if (_lastAppOpenAttempt != null &&
       now.difference(_lastAppOpenAttempt!) < _appOpenDebounce) {
@@ -49,9 +49,15 @@ void _tryShowAppOpen() {
   gAds.openAdsInstance.showAdIfAvailableOpenAds();
 }
 
+bool _canShowAppOpen() => gAdsReady && gAds.hasAppOpen;
+
+bool _canShowInterstitial() => gAdsReady && gAds.hasInterstitials;
+
+bool _canShowRewarded() => gAdsReady && gAds.hasRewarded;
+
 /// Runs [action] after the interstitial closes, or immediately if ads are off.
 void runAfterInterstitial(void Function() action) {
-  if (!gAdsReady) {
+  if (!_canShowInterstitial()) {
     action();
     return;
   }
@@ -61,7 +67,7 @@ void runAfterInterstitial(void Function() action) {
 
 /// Runs [action] after the rewarded ad closes, or immediately if ads are off.
 void runAfterRewarded(void Function() action) {
-  if (!gAdsReady) {
+  if (!_canShowRewarded()) {
     action();
     return;
   }
