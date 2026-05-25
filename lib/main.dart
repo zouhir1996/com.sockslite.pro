@@ -47,7 +47,8 @@ class SocksliteApp extends StatefulWidget {
   State<SocksliteApp> createState() => _SocksliteAppState();
 }
 
-class _SocksliteAppState extends State<SocksliteApp> with WidgetsBindingObserver {
+class _SocksliteAppState extends State<SocksliteApp>
+    with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
