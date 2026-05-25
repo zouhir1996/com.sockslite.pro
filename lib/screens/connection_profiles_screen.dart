@@ -5,8 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:share_plus/share_plus.dart';
 
-import '../ads/interstitial_controller.dart';
 import '../app_messenger.dart';
+import '../services/ads_actions.dart';
 import '../config/app_product_info.dart';
 import '../models/saved_connection_profile.dart';
 import '../services/connection_profiles_store.dart';
@@ -81,7 +81,8 @@ class _ConnectionProfilesScreenState extends State<ConnectionProfilesScreen> {
   }
 
   Future<void> _openAddProfile() async {
-    InterstitialController.instance.showInterstitialOrRun(() {
+    if (!mounted) return;
+    runAfterInterstitial(() {
       if (!mounted) return;
       unawaited(_openEditor());
     });
@@ -165,9 +166,7 @@ class _ConnectionProfilesScreenState extends State<ConnectionProfilesScreen> {
       canPop: false,
       onPopInvokedWithResult: (didPop, result) {
         if (didPop) return;
-        InterstitialController.instance.showInterstitialOrRun(() {
-          if (context.mounted) Navigator.of(context).pop(result);
-        });
+        popAfterInterstitial(context, result);
       },
       child: Scaffold(
         backgroundColor: AppColors.scaffoldBlack,
@@ -516,11 +515,7 @@ class _ProfileEditorDialogState extends State<_ProfileEditorDialog> {
       ),
       actions: [
         TextButton(
-          onPressed: () {
-            InterstitialController.instance.showInterstitialOrRun(() {
-              if (context.mounted) Navigator.of(context).pop();
-            });
-          },
+          onPressed: () => popAfterInterstitial(context),
           child: Text(
             'Cancel',
             style: GoogleFonts.nunito(

@@ -4,9 +4,8 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import '../ads/interstitial_controller.dart';
-import '../ads/rewarded_controller.dart';
 import '../app_messenger.dart';
+import '../services/ads_actions.dart';
 import '../config/app_product_info.dart';
 import '../screens/connection_profiles_screen.dart';
 import '../screens/sockslite_guide_screen.dart';
@@ -207,11 +206,7 @@ class _AjustesBodyState extends State<_AjustesBody> {
           ),
           actions: [
             TextButton(
-              onPressed: () {
-                InterstitialController.instance.showInterstitialOrRun(() {
-                  Navigator.of(ctx).pop(null);
-                });
-              },
+              onPressed: () => popAfterInterstitial(ctx, null),
               child: Text(
                 'Cancel',
                 style: GoogleFonts.nunito(
@@ -306,11 +301,7 @@ class _AjustesBodyState extends State<_AjustesBody> {
                       ),
                     ),
                     IconButton(
-                      onPressed: () {
-                        InterstitialController.instance.showInterstitialOrRun(() {
-                          Navigator.of(context).pop();
-                        });
-                      },
+                      onPressed: () => popAfterInterstitial(context),
                       icon: const Icon(
                         Icons.close,
                         color: Colors.redAccent,
@@ -350,7 +341,8 @@ class _AjustesBodyState extends State<_AjustesBody> {
                         title: 'Sockslite guide',
                         subtitle: 'VPN & proxy reference (no tunnel)',
                         onTap: () {
-                          RewardedAdController.instance.showRewardedThenRun(() {
+                          runAfterRewarded(() {
+                            if (!context.mounted) return;
                             pushAfterClosingDialog(
                               context,
                               const SocksliteGuideScreen(),
@@ -364,7 +356,8 @@ class _AjustesBodyState extends State<_AjustesBody> {
                         title: 'Saved connection profiles',
                         subtitle: 'For your VPN or proxy client (local only)',
                         onTap: () {
-                          RewardedAdController.instance.showRewardedThenRun(() {
+                          runAfterInterstitial(() {
+                            if (!context.mounted) return;
                             pushAfterClosingDialog(
                               context,
                               const ConnectionProfilesScreen(),
@@ -436,8 +429,8 @@ class _AjustesBodyState extends State<_AjustesBody> {
                           child: InkWell(
                             borderRadius: BorderRadius.circular(12),
                             onTap: () {
-                              InterstitialController.instance
-                                  .showInterstitialOrRun(() {
+                              runAfterRewarded(() {
+                                if (!mounted) return;
                                 unawaited(_redefinir());
                               });
                             },

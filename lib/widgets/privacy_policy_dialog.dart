@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../ads/interstitial_controller.dart';
 import '../app_messenger.dart';
 import '../config/app_product_info.dart';
 import '../config/store_metadata.dart';
@@ -128,11 +127,7 @@ void showPrivacyPolicyDialog(BuildContext context) {
             ),
           ),
         TextButton(
-          onPressed: () {
-            InterstitialController.instance.showInterstitialOrRun(() {
-              Navigator.of(ctx).pop();
-            });
-          },
+          onPressed: () => Navigator.of(ctx).pop(),
           child: Text(
             'OK',
             style: GoogleFonts.nunito(

@@ -4,7 +4,6 @@ import 'package:app_settings/app_settings.dart';
 import 'package:flutter/foundation.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../ads/interstitial_controller.dart';
 import '../app_messenger.dart';
 import '../config/store_metadata.dart';
 import 'settings_persistence.dart';
@@ -29,14 +28,10 @@ Future<void> _runToolSafe(String id) async {
 Future<void> _runToolActionImpl(String id) async {
   switch (id) {
     case 'apn':
-      InterstitialController.instance.showInterstitialOrRun(() {
-        unawaited(_openApn());
-      });
+      await _openApn();
       break;
     case 'rede_movel':
-      InterstitialController.instance.showInterstitialOrRun(() {
-        unawaited(_openRedeMovel());
-      });
+      await _openRedeMovel();
       break;
     case 'rotear':
       await openSystemVpnRelatedSettings();
@@ -45,9 +40,7 @@ Future<void> _runToolActionImpl(String id) async {
       await _openExternal(Uri.parse('https://fast.com'));
       break;
     case 'bateria':
-      InterstitialController.instance.showInterstitialOrRun(() {
-        unawaited(_openBateria());
-      });
+      await _openBateria();
       break;
     case 'store':
       await _openExternal(StoreMetadata.storeFrontUriForCurrentPlatform());

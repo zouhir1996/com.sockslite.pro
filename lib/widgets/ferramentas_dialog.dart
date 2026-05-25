@@ -5,9 +5,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import '../ads/interstitial_controller.dart';
-import '../ads/rewarded_controller.dart';
 import '../screens/connection_profiles_screen.dart';
+import '../services/ads_actions.dart';
 import '../screens/sockslite_guide_screen.dart';
 import '../services/tool_actions.dart';
 import '../theme/app_colors.dart';
@@ -147,11 +146,7 @@ class _FerramentasBody extends StatelessWidget {
                       ),
                     ),
                     IconButton(
-                      onPressed: () {
-                        InterstitialController.instance.showInterstitialOrRun(() {
-                          Navigator.of(context).pop();
-                        });
-                      },
+                      onPressed: () => popAfterInterstitial(context),
                       icon: const Icon(
                         Icons.close,
                         color: Colors.redAccent,
@@ -207,21 +202,22 @@ class _ToolTile extends StatelessWidget {
             return;
           }
           if (tool.id == 'sockslite_guide') {
-            RewardedAdController.instance.showRewardedThenRun(() {
+            runAfterRewarded(() {
+              if (!context.mounted) return;
               pushAfterClosingDialog(context, const SocksliteGuideScreen());
             });
             return;
           }
           if (tool.id == 'saved_profiles') {
-            RewardedAdController.instance.showRewardedThenRun(() {
-              pushAfterClosingDialog(
-                context,
-                const ConnectionProfilesScreen(),
-              );
+            runAfterInterstitial(() {
+              if (!context.mounted) return;
+              pushAfterClosingDialog(context, const ConnectionProfilesScreen());
             });
             return;
           }
-          unawaited(runToolAction(tool.id));
+          runAfterInterstitial(() {
+            unawaited(runToolAction(tool.id));
+          });
         },
         child: Container(
           decoration: BoxDecoration(

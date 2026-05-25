@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import '../ads/interstitial_controller.dart';
 import '../config/app_product_info.dart';
+import '../services/ads_actions.dart';
 import '../services/vpn_settings_launcher.dart';
 import '../theme/app_colors.dart';
 
@@ -16,9 +16,7 @@ class SocksliteGuideScreen extends StatelessWidget {
       canPop: false,
       onPopInvokedWithResult: (didPop, result) {
         if (didPop) return;
-        InterstitialController.instance.showInterstitialOrRun(() {
-          if (context.mounted) Navigator.of(context).pop(result);
-        });
+        popAfterInterstitial(context, result);
       },
       child: Scaffold(
         backgroundColor: AppColors.scaffoldBlack,
@@ -76,7 +74,9 @@ class SocksliteGuideScreen extends StatelessWidget {
               ),
               _OpenVpnSettingsButton(
                 label: 'Open Settings (VPN path on iOS)',
-                onPressed: () => openSystemVpnRelatedSettings(),
+                onPressed: () {
+                  runAfterInterstitial(() => openSystemVpnRelatedSettings());
+                },
               ),
               const SizedBox(height: 24),
               _GuideSection(
@@ -97,7 +97,9 @@ class SocksliteGuideScreen extends StatelessWidget {
               ),
               _OpenVpnSettingsButton(
                 label: 'Open system settings',
-                onPressed: () => openSystemVpnRelatedSettings(),
+                onPressed: () {
+                  runAfterInterstitial(() => openSystemVpnRelatedSettings());
+                },
               ),
               const SizedBox(height: 24),
               _GuideSection(

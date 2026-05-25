@@ -1,21 +1,18 @@
 import 'dart:async';
 import 'dart:math' as math;
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../ads/admob_config.dart';
-import '../ads/banner_ad_slot.dart';
-import '../ads/interstitial_controller.dart';
-import '../ads/rewarded_controller.dart';
 import '../app_messenger.dart';
+import '../services/ads_actions.dart';
 import '../services/settings_persistence.dart';
 import '../theme/app_colors.dart';
 import 'connection_profiles_screen.dart';
 import 'sockslite_guide_screen.dart';
 import '../widgets/ajustes_dialog.dart';
+import '../widgets/banner_ad_slot.dart';
 import '../widgets/ferramentas_dialog.dart';
 import '../widgets/network_stats_bar.dart';
 import '../widgets/registro_dialog.dart';
@@ -179,75 +176,77 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _openSocksliteGuide() {
-    RewardedAdController.instance.showRewardedThenRun(() {
-      if (!mounted) return;
-      Navigator.of(context).push<void>(
-        MaterialPageRoute<void>(builder: (_) => const SocksliteGuideScreen()),
-      );
-    });
+    if (!mounted) return;
+    Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(builder: (_) => const SocksliteGuideScreen()),
+    );
   }
 
   void _openSavedProfiles() {
-    RewardedAdController.instance.showRewardedThenRun(() {
-      if (!mounted) return;
-      Navigator.of(context).push<void>(
-        MaterialPageRoute<void>(
-          builder: (_) => const ConnectionProfilesScreen(),
-        ),
-      );
-    });
+    if (!mounted) return;
+    Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        builder: (_) => const ConnectionProfilesScreen(),
+      ),
+    );
   }
 
   void _onNavTap(int index) {
-    if (index == 0) {
-      InterstitialController.instance.showInterstitialOrRun(() {
-        if (!mounted) return;
-        setState(() => _navIndex = 0);
-        showAjustesDialog(context).whenComplete(_clearNavHighlight);
-      });
-      return;
-    }
-    if (index == 2) {
-      RewardedAdController.instance.showRewardedThenRun(() {
-        if (!mounted) return;
-        _onNavTapImpl(2);
-      });
-      return;
-    }
-    RewardedAdController.instance.showRewardedThenRun(() {
-      if (!mounted) return;
-      _onNavTapImpl(index);
-    });
+    if (!mounted) return;
+    _onNavTapImpl(index);
+  }
+
+  void _toggleConnection() {
+    final next = !_vpnOn;
+    setState(() => _vpnOn = next);
+    unawaited(_persistVpnState(next));
+    _syncConnectionTicker();
+    _syncStatsTicker();
+    AppMessenger.show(
+      next
+          ? 'On (UI only). Does not create an iOS VPN profile or route traffic.'
+          : 'Off (UI).',
+    );
   }
 
   void _onNavTapImpl(int index) {
     if (index == 2) {
-      final next = !_vpnOn;
-      setState(() => _vpnOn = next);
-      unawaited(_persistVpnState(next));
-      _syncConnectionTicker();
-      _syncStatsTicker();
-      AppMessenger.show(
-        next
-            ? 'On (UI only). Does not create an iOS VPN profile or route traffic.'
-            : 'Off (UI).',
-      );
+      if (_vpnOn) {
+        runAfterRewarded(() {
+          if (!mounted) return;
+          _toggleConnection();
+        });
+      } else {
+        _toggleConnection();
+      }
       return;
     }
 
     setState(() => _navIndex = index);
     switch (index) {
       case 0:
-        showAjustesDialog(context).whenComplete(_clearNavHighlight);
+        runAfterRewarded(() {
+          if (!mounted) return;
+          showAjustesDialog(context).whenComplete(_clearNavHighlight);
+        });
         break;
       case 1:
-        showRegistroDialog(context).whenComplete(_clearNavHighlight);
+        runAfterRewarded(() {
+          if (!mounted) return;
+          showRegistroDialog(context).whenComplete(_clearNavHighlight);
+        });
         break;
       case 3:
-        unawaited(_runServerRefreshNav());
+        runAfterInterstitial(() {
+          if (!mounted) return;
+          unawaited(_runServerRefreshNav());
+        });
         break;
       case 4:
-        showFerramentasDialog(context).whenComplete(_clearNavHighlight);
+        runAfterInterstitial(() {
+          if (!mounted) return;
+          showFerramentasDialog(context).whenComplete(_clearNavHighlight);
+        });
         break;
     }
   }
@@ -268,7 +267,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 '${_formatRemainingConnection(_remainingSeconds)} REMAINING CONNECTION TIME',
             onAdd: () {
               if (!mounted) return;
-              InterstitialController.instance.showInterstitialOrRun(() {
+              runAfterRewarded(() {
                 if (!mounted) return;
                 unawaited(_addRemainingTime());
               });
@@ -281,8 +280,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 children: [
                   const SizedBox(height: 8),
                   _SocksliteHubRow(
-                    onGuide: _openSocksliteGuide,
-                    onProfiles: _openSavedProfiles,
+                    onGuide: () => runAfterRewarded(_openSocksliteGuide),
+                    onProfiles: () => runAfterInterstitial(_openSavedProfiles),
                   ),
                   const SizedBox(height: 14),
                   _PowerRing(active: _vpnOn, onTap: () => _onNavTap(2)),
@@ -392,7 +391,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         _serverProfile ==
                         SettingsPersistence.serverProfileRandom,
                     onTap: () {
-                      RewardedAdController.instance.showRewardedThenRun(() {
+                      runAfterInterstitial(() {
                         if (!mounted) return;
                         unawaited(
                           SettingsPersistence.saveServerProfile(
@@ -421,7 +420,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     selected:
                         _serverProfile == SettingsPersistence.serverProfileAuto,
                     onTap: () {
-                      RewardedAdController.instance.showRewardedThenRun(() {
+                      runAfterInterstitial(() {
                         if (!mounted) return;
                         unawaited(
                           SettingsPersistence.saveServerProfile(
@@ -466,7 +465,7 @@ class _HomeScreenState extends State<HomeScreen> {
       bottomNavigationBar: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          if (!kIsWeb && AdMobConfig.bannerActive) const BannerAdSlot(),
+          const BannerAdSlot(),
           _BottomDock(
             bottomInset: bottomInset,
             selectedIndex: _navIndex,

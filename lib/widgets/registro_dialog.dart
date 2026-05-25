@@ -9,8 +9,8 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../ads/interstitial_controller.dart';
 import '../app_messenger.dart';
+import '../services/ads_actions.dart';
 import '../config/app_product_info.dart';
 import '../theme/app_colors.dart';
 
@@ -236,12 +236,7 @@ class _RegistroBodyState extends State<_RegistroBody> {
                           ),
                         ),
                         IconButton(
-                          onPressed: () {
-                            InterstitialController.instance
-                                .showInterstitialOrRun(() {
-                              Navigator.of(context).pop();
-                            });
-                          },
+                          onPressed: () => popAfterInterstitial(context),
                           icon: const Icon(
                             Icons.close,
                             color: Colors.redAccent,

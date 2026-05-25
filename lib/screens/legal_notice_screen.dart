@@ -5,8 +5,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../ads/interstitial_controller.dart';
 import '../app_messenger.dart';
+import '../services/ads_actions.dart';
 import '../config/app_product_info.dart';
 import '../config/store_metadata.dart';
 import '../theme/app_colors.dart';
@@ -20,11 +20,12 @@ class LegalNoticeScreen extends StatelessWidget {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('legal_accepted', true);
     if (!context.mounted) return;
-    InterstitialController.instance.showInterstitialOrRun(() {
-      if (!context.mounted) return;
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute<void>(builder: (_) => const HomeScreen()),
-      );
+    markAppOpenGatePassed();
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute<void>(builder: (_) => const HomeScreen()),
+    );
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      showAppOpenAfterLegalGate();
     });
   }
 
